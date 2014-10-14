@@ -111,52 +111,145 @@ func makeFraction(numerator, denominator int64) *Fraction {
 }
 
 func add(args ...number) number {
-	a := args[0]
-	b := args[1]
+	a, b := args[0], args[1]
+	if a == nil || b == nil {
+		return nil
+	}
 	if an, bn := a.fractionValue(), b.fractionValue(); an != nil && bn != nil {
-		var am, bm int64 = 1, 1
-
-		if an.d != bn.d {
-			var af, bf []int64 = primeFactors(an.d), primeFactors(bn.d)
-
-			ad, bd := false, false
-			ai, bi := 0, 0
-			for {
-				if af[ai] == bf[bi] && !(ad || bd) {
-					ai++
-					bi++
-				} else if af[ai] < bf[bi] || bd {
-					bm = bm * af[ai]
-					ai++
-				} else if bf[bi] < af[ai] || ad {
-					am = am * bf[bi]
-					bi++
-				}
-
-				if ai == len(af) {
-					ai--
-					ad = true
-				}
-				if bi == len(bf) {
-					bi--
-					bd = true
-				}
-				if ad && bd {
-					break
-				}
-			}
-		}
+		am, bm := getFactorsForCommonDenominator(an, bn)
 		return makeFraction(an.n*am+bn.n*bm, an.d*am)
 	}
 	sdf := new(SdigitsFloat)
 	af, bf := a.floatValue(), b.floatValue()
 	sdf.n = af.n + bf.n
-	if af.sd <= bf.sd {
-		sdf.sd = af.sd
-	} else {
-		sdf.sd = bf.sd
-	}
+	sdf.sd = lowestSD(af.sd, bf.sd)
 	return sdf
+}
+
+func subtract(args ...number) number {
+	a, b := args[0], args[1]
+	if a == nil || b == nil {
+		return nil
+	}
+	if an, bn := a.fractionValue(), b.fractionValue(); an != nil && bn != nil {
+		am, bm := getFactorsForCommonDenominator(an, bn)
+		return makeFraction(an.n*am-bn.n*bm, an.d*am)
+	}
+	sdf := new(SdigitsFloat)
+	af, bf := a.floatValue(), b.floatValue()
+	sdf.n = af.n - bf.n
+	sdf.sd = lowestSD(af.sd, bf.sd)
+	return sdf
+}
+
+func multiply(args ...number) number {
+	a, b := args[0], args[1]
+	if a == nil || b == nil {
+		return nil
+	}
+	if an, bn := a.fractionValue(), b.fractionValue(); an != nil && bn != nil {
+		return makeFraction(an.n*bn.n, an.d*bn.d)
+	}
+	sdf := new(SdigitsFloat)
+	af, bf := a.floatValue(), b.floatValue()
+	sdf.n = af.n * bf.n
+	sdf.sd = lowestSD(af.sd, bf.sd)
+	return sdf
+}
+
+func divide(args ...number) number {
+	a, b := args[0], args[1]
+	if a == nil || b == nil {
+		return nil
+	}
+	if an, bn := a.fractionValue(), b.fractionValue(); an != nil && bn != nil {
+		return makeFraction(an.n*bn.d, an.d*bn.n)
+	}
+	sdf := new(SdigitsFloat)
+	af, bf := a.floatValue(), b.floatValue()
+	sdf.n = af.n / bf.n
+	sdf.sd = lowestSD(af.sd, bf.sd)
+	return sdf
+}
+
+func raiseToPower(args ...number) number {
+	a, b := args[0], args[1]
+	if a == nil || b == nil {
+		return nil
+	}
+	sdf := new(SdigitsFloat)
+	af, bf := a.floatValue(), b.floatValue()
+	sdf.n = math.Pow(af.n, bf.n)
+	sdf.sd = lowestSD(af.sd, bf.sd)
+	return sdf
+}
+
+func ln(args ...number) number {
+	a := args[0]
+	if a == nil {
+		return nil
+	}
+	sdf := new(SdigitsFloat)
+	af := a.floatValue()
+	sdf.n = math.Log(af.n)
+	sdf.sd = af.sd
+	return sdf
+}
+
+func log(args ...number) number {
+	a := args[0]
+	if a == nil {
+		return nil
+	}
+	sdf := new(SdigitsFloat)
+	af := a.floatValue()
+	sdf.n = math.Log10(af.n)
+	sdf.sd = af.sd
+	return sdf
+}
+
+//Utillity functions
+func getFactorsForCommonDenominator(a, b *Fraction) (am, bm int64) {
+	am, bm = 1, 1
+	if a.d != b.d {
+		var af, bf []int64 = primeFactors(a.d), primeFactors(b.d)
+
+		ad, bd := false, false
+		ai, bi := 0, 0
+		for {
+			if af[ai] == bf[bi] && !(ad || bd) {
+				ai++
+				bi++
+			} else if af[ai] < bf[bi] || bd {
+				bm = bm * af[ai]
+				ai++
+			} else if bf[bi] < af[ai] || ad {
+				am = am * bf[bi]
+				bi++
+			}
+
+			if ai == len(af) {
+				ai--
+				ad = true
+			}
+			if bi == len(bf) {
+				bi--
+				bd = true
+			}
+			if ad && bd {
+				break
+			}
+		}
+	}
+	return
+}
+
+func lowestSD(a, b uint8) uint8 {
+	if a <= b {
+		return a
+	} else {
+		return b
+	}
 }
 
 //Prime functions

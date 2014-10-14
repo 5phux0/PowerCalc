@@ -5,61 +5,86 @@ import (
 )
 
 type Expression struct {
-	children     []*Expression
-	call         func(*Expression, *map[string]*Expression) *Expression
-	value        func(*Expression) number
-	description  func(*Expression) string
-	listUnknowns func(*Expression) []string
+	children            []*Expression
+	privateCall         func(*Expression, *map[string]*Expression) *Expression
+	privateValue        func(*Expression) number
+	privateDescription  func(*Expression) string
+	privateListUnknowns func(*Expression) []string
 }
 
-func addExpressions(a, b *Expression) *Expression {
-	return newExpressionWithValueFuncDescFormAndArgs(add, "%s+%s", a, b)
+//Basic *Expression operator functions
+func AddExpressions(a, b *Expression) *Expression {
+	return NewExpressionWithValueFuncDescFormAndArgs(add, "%s+%s", a, b)
 }
 
-//Shell Methods
-func (exp *Expression) mCall(m *map[string]*Expression) *Expression {
-	return exp.call(exp, m)
+func SubtractExpressions(a, b *Expression) *Expression {
+	return NewExpressionWithValueFuncDescFormAndArgs(subtract, "%s-%s", a, b)
 }
 
-func (exp *Expression) mValue() number {
-	return exp.value(exp)
+func MultiplyExpressions(a, b *Expression) *Expression {
+	return NewExpressionWithValueFuncDescFormAndArgs(multiply, "%s*%s", a, b)
 }
 
-func (exp *Expression) mDescription() string {
-	return exp.description(exp)
+func DivideExpressions(a, b *Expression) *Expression {
+	return NewExpressionWithValueFuncDescFormAndArgs(divide, "%s/%s", a, b)
 }
 
-func (exp *Expression) mListUnknowns() []string {
-	return exp.listUnknowns(exp)
+func RaiseExpressionToPower(a, b *Expression) *Expression {
+	return NewExpressionWithValueFuncDescFormAndArgs(divide, "%s^(%s)", a, b)
 }
 
-//newExpression
-func newExpressionWithConstant(con number) *Expression {
+func decimalLogarithmOfExpression(a *Expression) *Expression {
+	return NewExpressionWithValueFuncDescFormAndArgs(log, "log(%s)", a)
+}
+
+func naturalLogarithmOfExpression(a *Expression) *Expression {
+	return NewExpressionWithValueFuncDescFormAndArgs(ln, "ln(%s)", a)
+}
+
+//Exported *Expression Methods
+func (exp *Expression) Call(m *map[string]*Expression) *Expression {
+	return exp.privateCall(exp, m)
+}
+
+func (exp *Expression) Value() number {
+	return exp.privateValue(exp)
+}
+
+func (exp *Expression) Description() string {
+	return exp.privateDescription(exp)
+}
+
+func (exp *Expression) ListUnknowns() []string {
+	return exp.privateListUnknowns(exp)
+}
+
+//NewExpression
+func NewExpressionWithConstant(con number) *Expression {
 	e := new(Expression)
 	e.children = nil
-	e.call = func(*Expression, *map[string]*Expression) *Expression {
+	e.privateCall = func(*Expression, *map[string]*Expression) *Expression {
 		return e
 	}
-	e.value = func(*Expression) number {
+	e.privateValue = func(*Expression) number {
 		return con
 	}
-	e.description = func(*Expression) string {
+	e.privateDescription = func(*Expression) string {
 		return fmt.Sprint(con.description())
 	}
-	e.listUnknowns = func(*Expression) []string {
+	e.privateListUnknowns = func(*Expression) []string {
 		return make([]string, 0)
 	}
 	return e
 }
 
-func newExpressionWithUnknown(unk string) *Expression {
+func NewExpressionWithUnknown(unk string) *Expression {
 	e := new(Expression)
 	e.children = nil
-	e.call = func(ne *Expression, m *map[string]*Expression) *Expression {
+	e.privateCall = func(ne *Expression, m *map[string]*Expression) *Expression {
 		for key, value := range *m {
 			if key == unk {
 				if value != nil {
-					return value.mCall(m)
+					return value.Call(m)
 				} else {
 					return e
 				}
@@ -67,19 +92,19 @@ func newExpressionWithUnknown(unk string) *Expression {
 		}
 		return e
 	}
-	e.value = func(*Expression) number {
+	e.privateValue = func(*Expression) number {
 		return nil
 	}
-	e.description = func(*Expression) string {
+	e.privateDescription = func(*Expression) string {
 		return unk
 	}
-	e.listUnknowns = func(*Expression) []string {
+	e.privateListUnknowns = func(*Expression) []string {
 		return []string{unk}
 	}
 	return e
 }
 
-func newExpressionWithValueFuncDescFormAndArgs(valueFunc func(...number) number, descFormat string, args ...*Expression) *Expression {
+func NewExpressionWithValueFuncDescFormAndArgs(valueFunc func(...number) number, descFormat string, args ...*Expression) *Expression {
 	if len(args) < 1 {
 		fmt.Println("Can not make combined expression without subexpression")
 		return nil
@@ -92,31 +117,31 @@ func newExpressionWithValueFuncDescFormAndArgs(valueFunc func(...number) number,
 	}
 	e := new(Expression)
 	e.children = args
-	e.call = func(exp *Expression, m *map[string]*Expression) *Expression {
+	e.privateCall = func(exp *Expression, m *map[string]*Expression) *Expression {
 		ne := new(Expression)
 		ne.children = make([]*Expression, len(exp.children))
 		for i, v := range exp.children {
-			ne.children[i] = v.mCall(m)
+			ne.children[i] = v.Call(m)
 		}
-		ne.call = exp.call
-		ne.value = exp.value
-		ne.description = exp.description
-		ne.listUnknowns = exp.listUnknowns
+		ne.privateCall = exp.privateCall
+		ne.privateValue = exp.privateValue
+		ne.privateDescription = exp.privateDescription
+		ne.privateListUnknowns = exp.privateListUnknowns
 		return ne
 	}
 	if valueFunc == nil {
-		e.value = func(exp *Expression) number {
-			if val := exp.children[0].mValue(); val != nil{
+		e.privateValue = func(exp *Expression) number {
+			if val := exp.children[0].Value(); val != nil {
 				return val
 			} else {
 				return nil
 			}
 		}
 	} else {
-		e.value = func(exp *Expression) number {
+		e.privateValue = func(exp *Expression) number {
 			cvals := make([]number, len(exp.children))
 			for i, v := range exp.children {
-				cvals[i] = v.mValue()
+				cvals[i] = v.Value()
 				if cvals[i] == nil {
 					return nil
 				}
@@ -124,17 +149,17 @@ func newExpressionWithValueFuncDescFormAndArgs(valueFunc func(...number) number,
 			return valueFunc(cvals...)
 		}
 	}
-	e.description = func(exp *Expression) string {
+	e.privateDescription = func(exp *Expression) string {
 		cdesc := make([]interface{}, len(exp.children))
 		for i, v := range exp.children {
-			cdesc[i] = v.mDescription()
+			cdesc[i] = v.Description()
 		}
 		return fmt.Sprintf(descFormat, cdesc...)
 	}
-	e.listUnknowns = func(exp *Expression) []string {
+	e.privateListUnknowns = func(exp *Expression) []string {
 		unks := make([]string, 0)
 		for _, c := range exp.children {
-			cu := c.mListUnknowns()
+			cu := c.ListUnknowns()
 			for _, a := range cu {
 				isdupe := false
 				for _, b := range unks {
