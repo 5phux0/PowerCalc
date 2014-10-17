@@ -33,12 +33,16 @@ func RaiseExpressionToPower(a, b *Expression) *Expression {
 	return NewExpressionWithValueFuncDescFormAndArgs(divide, "%s^(%s)", a, b)
 }
 
-func decimalLogarithmOfExpression(a *Expression) *Expression {
+func DecimalLogarithmOfExpression(a *Expression) *Expression {
 	return NewExpressionWithValueFuncDescFormAndArgs(log, "log(%s)", a)
 }
 
-func naturalLogarithmOfExpression(a *Expression) *Expression {
+func NaturalLogarithmOfExpression(a *Expression) *Expression {
 	return NewExpressionWithValueFuncDescFormAndArgs(ln, "ln(%s)", a)
+}
+
+func ParenthesisEnclosedExpression(a *Expression) *Expression {
+	return NewExpressionWithValueFuncDescFormAndArgs(nil, "(%s)", a)
 }
 
 //Exported *Expression Methods
@@ -69,7 +73,7 @@ func NewExpressionWithConstant(con number) *Expression {
 		return con
 	}
 	e.privateDescription = func(*Expression) string {
-		return fmt.Sprint(con.description())
+		return fmt.Sprint(con.Description())
 	}
 	e.privateListUnknowns = func(*Expression) []string {
 		return make([]string, 0)

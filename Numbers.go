@@ -17,13 +17,13 @@ type Fraction struct {
 }
 
 type number interface {
-	fractionValue() *Fraction //returns nil when called on SdigitsFloat
-	floatValue() *SdigitsFloat
-	description() string
+	FractionValue() *Fraction //returns nil when called on SdigitsFloat
+	FloatValue() *SdigitsFloat
+	Description() string
 }
 
 //Number interface functions
-func (f *Fraction) description() string {
+func (f *Fraction) Description() string {
 	if f.d != 1 && f.om != 1 {
 		return fmt.Sprintf("%d/%d = %d/%d = %f", f.n*f.om, f.d*f.om, f.n, f.d, float64(f.n)/float64(f.d))
 	} else if f.d != 1 {
@@ -33,32 +33,32 @@ func (f *Fraction) description() string {
 	}
 }
 
-func (f *SdigitsFloat) description() string {
+func (f *SdigitsFloat) Description() string {
 	s := fmt.Sprintf("%.*G", int(f.sd), f.n)
 	return s
 }
 
-func (f *Fraction) fractionValue() *Fraction {
+func (f *Fraction) FractionValue() *Fraction {
 	return f
 }
 
-func (f *SdigitsFloat) fractionValue() *Fraction {
+func (f *SdigitsFloat) FractionValue() *Fraction {
 	return nil
 }
 
-func (f *Fraction) floatValue() *SdigitsFloat {
+func (f *Fraction) FloatValue() *SdigitsFloat {
 	sdf := new(SdigitsFloat)
 	sdf.n = float64(f.n) / float64(f.d)
 	sdf.sd = 15
 	return sdf
 }
 
-func (f *SdigitsFloat) floatValue() *SdigitsFloat {
+func (f *SdigitsFloat) FloatValue() *SdigitsFloat {
 	return f
 }
 
 //Math
-func makeFraction(numerator, denominator int64) *Fraction {
+func MakeFraction(numerator, denominator int64) *Fraction {
 	if denominator == 0 {
 		fmt.Println("Can't create fraction with denominator=0")
 		return nil
@@ -110,17 +110,24 @@ func makeFraction(numerator, denominator int64) *Fraction {
 	return nfrac
 }
 
+func MakeSDFloat(n float64, sd uint8) *SdigitsFloat {
+	nsdf := new(SdigitsFloat)
+	nsdf.n = n
+	nsdf.sd = sd
+	return nsdf
+}
+
 func add(args ...number) number {
 	a, b := args[0], args[1]
 	if a == nil || b == nil {
 		return nil
 	}
-	if an, bn := a.fractionValue(), b.fractionValue(); an != nil && bn != nil {
+	if an, bn := a.FractionValue(), b.FractionValue(); an != nil && bn != nil {
 		am, bm := getFactorsForCommonDenominator(an, bn)
-		return makeFraction(an.n*am+bn.n*bm, an.d*am)
+		return MakeFraction(an.n*am+bn.n*bm, an.d*am)
 	}
 	sdf := new(SdigitsFloat)
-	af, bf := a.floatValue(), b.floatValue()
+	af, bf := a.FloatValue(), b.FloatValue()
 	sdf.n = af.n + bf.n
 	sdf.sd = lowestSD(af.sd, bf.sd)
 	return sdf
@@ -131,12 +138,12 @@ func subtract(args ...number) number {
 	if a == nil || b == nil {
 		return nil
 	}
-	if an, bn := a.fractionValue(), b.fractionValue(); an != nil && bn != nil {
+	if an, bn := a.FractionValue(), b.FractionValue(); an != nil && bn != nil {
 		am, bm := getFactorsForCommonDenominator(an, bn)
-		return makeFraction(an.n*am-bn.n*bm, an.d*am)
+		return MakeFraction(an.n*am-bn.n*bm, an.d*am)
 	}
 	sdf := new(SdigitsFloat)
-	af, bf := a.floatValue(), b.floatValue()
+	af, bf := a.FloatValue(), b.FloatValue()
 	sdf.n = af.n - bf.n
 	sdf.sd = lowestSD(af.sd, bf.sd)
 	return sdf
@@ -147,11 +154,11 @@ func multiply(args ...number) number {
 	if a == nil || b == nil {
 		return nil
 	}
-	if an, bn := a.fractionValue(), b.fractionValue(); an != nil && bn != nil {
-		return makeFraction(an.n*bn.n, an.d*bn.d)
+	if an, bn := a.FractionValue(), b.FractionValue(); an != nil && bn != nil {
+		return MakeFraction(an.n*bn.n, an.d*bn.d)
 	}
 	sdf := new(SdigitsFloat)
-	af, bf := a.floatValue(), b.floatValue()
+	af, bf := a.FloatValue(), b.FloatValue()
 	sdf.n = af.n * bf.n
 	sdf.sd = lowestSD(af.sd, bf.sd)
 	return sdf
@@ -162,11 +169,11 @@ func divide(args ...number) number {
 	if a == nil || b == nil {
 		return nil
 	}
-	if an, bn := a.fractionValue(), b.fractionValue(); an != nil && bn != nil {
-		return makeFraction(an.n*bn.d, an.d*bn.n)
+	if an, bn := a.FractionValue(), b.FractionValue(); an != nil && bn != nil {
+		return MakeFraction(an.n*bn.d, an.d*bn.n)
 	}
 	sdf := new(SdigitsFloat)
-	af, bf := a.floatValue(), b.floatValue()
+	af, bf := a.FloatValue(), b.FloatValue()
 	sdf.n = af.n / bf.n
 	sdf.sd = lowestSD(af.sd, bf.sd)
 	return sdf
@@ -178,7 +185,7 @@ func raiseToPower(args ...number) number {
 		return nil
 	}
 	sdf := new(SdigitsFloat)
-	af, bf := a.floatValue(), b.floatValue()
+	af, bf := a.FloatValue(), b.FloatValue()
 	sdf.n = math.Pow(af.n, bf.n)
 	sdf.sd = lowestSD(af.sd, bf.sd)
 	return sdf
@@ -190,7 +197,7 @@ func ln(args ...number) number {
 		return nil
 	}
 	sdf := new(SdigitsFloat)
-	af := a.floatValue()
+	af := a.FloatValue()
 	sdf.n = math.Log(af.n)
 	sdf.sd = af.sd
 	return sdf
@@ -202,7 +209,7 @@ func log(args ...number) number {
 		return nil
 	}
 	sdf := new(SdigitsFloat)
-	af := a.floatValue()
+	af := a.FloatValue()
 	sdf.n = math.Log10(af.n)
 	sdf.sd = af.sd
 	return sdf
