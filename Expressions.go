@@ -34,7 +34,7 @@ func RaiseExpressionToPower(a, b *Expression) *Expression {
 }
 
 func DecimalLogarithmOfExpression(a *Expression) *Expression {
-	return NewExpressionWithValueFuncDescFormAndArgs(log, "log(%s)", a)
+	return NewExpressionWithValueFuncDescFormAndArgs(lg, "lg(%s)", a)
 }
 
 func NaturalLogarithmOfExpression(a *Expression) *Expression {
@@ -46,7 +46,7 @@ func ParenthesisEnclosedExpression(a *Expression) *Expression {
 }
 
 func SignInvertedExpression(a *Expression) *Expression {
-	return NewExpressionWithValueFuncDescFormAndArgs(subtract, "(-%[2]s)", NewExpressionWithConstant(MakeFraction(0, 1)), a)
+	return NewExpressionWithValueFuncDescFormAndArgs(subtract, "-(%[2]s)", NewExpressionWithConstant(MakeFraction(0, 1)), a)
 }
 
 //Exported *Expression Methods

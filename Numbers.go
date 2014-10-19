@@ -203,7 +203,7 @@ func ln(args ...number) number {
 	return sdf
 }
 
-func log(args ...number) number {
+func lg(args ...number) number {
 	a := args[0]
 	if a == nil {
 		return nil
