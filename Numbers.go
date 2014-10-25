@@ -220,17 +220,16 @@ func getFactorsForCommonDenominator(a, b *Fraction) (am, bm int64) {
 	am, bm = 1, 1
 	if a.d != b.d {
 		var af, bf []int64 = primeFactors(a.d), primeFactors(b.d)
-
 		ad, bd := false, false
 		ai, bi := 0, 0
 		for {
 			if af[ai] == bf[bi] && !(ad || bd) {
 				ai++
 				bi++
-			} else if af[ai] < bf[bi] || bd {
+			} else if (af[ai] < bf[bi] || bd) && !ad {
 				bm = bm * af[ai]
 				ai++
-			} else if bf[bi] < af[ai] || ad {
+			} else if (bf[bi] < af[ai] || ad) && !bd {
 				am = am * bf[bi]
 				bi++
 			}
